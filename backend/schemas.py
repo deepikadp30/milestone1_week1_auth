@@ -11,4 +11,4 @@ class UserResponse(BaseModel):
     email: EmailStr
 
     class Config:
-        from_attributes = True  # (for SQLAlchemy -> Pydantic conversion)
+        from_attributes = True  # replaces orm_mode in SQLAlchemy 2.x

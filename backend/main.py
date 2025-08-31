@@ -1,11 +1,14 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-import crud, models
-from database import SessionLocal, engine
+from database import SessionLocal, engine, Base
+import crud, schemas, models
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Dependency
+# Dependency: DB session
 def get_db():
     db = SessionLocal()
     try:
@@ -13,12 +16,27 @@ def get_db():
     finally:
         db.close()
 
-@app.post("/signup")
-def signup(username: str, email: str, password: str, db: Session = Depends(get_db)):
-    # Manually build the schema object
-    from schemas import UserCreate
-    user = UserCreate(username=username, email=email, password=password)
-    return crud.create_user(db=db, user=user)
+from fastapi import Query
+
+# --- Signup Route (Query Parameters) ---
+@app.post("/signup", response_model=schemas.UserResponse)
+def signup(
+    username: str = Query(...),
+    email: str = Query(...),
+    password: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    # Check if user already exists
+    db_user = db.query(models.User).filter(models.User.email == email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Create UserCreate schema manually
+    user_data = schemas.UserCreate(username=username, email=email, password=password)
+
+    return crud.create_user(db=db, user=user_data)
+
+
 
 
 @app.post("/login")
@@ -31,4 +49,3 @@ def login(username: str, password: str, db: Session = Depends(get_db)):
         "username": user.username,
         "email": user.email
     }
-

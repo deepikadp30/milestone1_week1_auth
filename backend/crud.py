@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 from models import User
 from schemas import UserCreate
@@ -16,6 +17,7 @@ def create_user(db: Session, user: UserCreate):
     db.refresh(db_user)
     return db_user
 
+
 def verify_password(plain_password, password):
     return pwd_context.verify(plain_password, password)
 
@@ -25,7 +27,7 @@ def get_user_by_username(db: Session, username: str):
 def authenticate_user(db: Session, username: str, password: str):
     user = get_user_by_username(db, username)
     if not user:
-        return None
-    if not verify_password(password, user.password):
-        return None
+        return False
+    if not verify_password(password, user.password):  # ❌ error here
+        return False
     return user
